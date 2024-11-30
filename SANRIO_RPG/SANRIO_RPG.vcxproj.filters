@@ -18,25 +18,5 @@
     <ClCompile Include="Character.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\Users\jpmdy\OneDrive\바탕 화면\시나모롤 쓰러짐.png">
-      <Filter>소스 파일</Filter>
-    </Image>
-    <Image Include="..\..\..\Users\jpmdy\OneDrive\바탕 화면\시나모롤.png">
-      <Filter>소스 파일</Filter>
-    </Image>
-    <Image Include="..\..\..\Users\jpmdy\OneDrive\바탕 화면\쿠로미.png">
-      <Filter>소스 파일</Filter>
-    </Image>
-    <Image Include="..\x64\Debug\cinnamoroll.png">
-      <Filter>소스 파일</Filter>
-    </Image>
-    <Image Include="..\x64\Debug\kuromi.png">
-      <Filter>소스 파일</Filter>
-    </Image>
   </ItemGroup>
 </Project>

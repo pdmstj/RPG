@@ -145,16 +145,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\Users\jpmdy\OneDrive\바탕 화면\시나모롤 쓰러짐.png" />
-    <Image Include="..\..\..\Users\jpmdy\OneDrive\바탕 화면\시나모롤.png" />
-    <Image Include="..\..\..\Users\jpmdy\OneDrive\바탕 화면\쿠로미.png" />
-    <Image Include="..\x64\Debug\cinnamoroll.png" />
-    <Image Include="..\x64\Debug\kuromi.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

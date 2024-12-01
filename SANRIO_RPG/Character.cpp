@@ -1,4 +1,5 @@
-﻿#include <iostream>
+﻿#include <limits> // 반드시 위쪽에 배치
+#include <iostream>
 #include <cstdlib>
 #include <ctime>
 #include <conio.h>
@@ -7,9 +8,7 @@
 #include <algorithm> // std::min 사용
 #include <thread>
 #include <sstream>
-#include <limits>
 #include <vector>
-#define GAMECONSTANTS_H
 
 using namespace std;
 
@@ -61,8 +60,8 @@ void printCenteredSlowly(const string& message) {
     std::cout << endl;
 }
 
-// 출력물 중앙 정렬 함수 정의
 void printCentered(const string& message) {
+    // 콘솔 화면 너비 계산
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     int columns;
 
@@ -73,10 +72,27 @@ void printCentered(const string& message) {
         columns = 80; // 기본값
     }
 
-    int padding = (columns - message.length()) / 2;
-    if (padding < 0) padding = 0; // 메시지가 콘솔보다 길 경우
+    // 여러 줄의 문자열을 지원하기 위해 스트림 사용
+    istringstream messageStream(message);
+    string line;
 
-    std::cout << string(padding, ' ') << message << endl;
+    while (getline(messageStream, line)) {
+        // 각 줄에 대해 중앙 정렬 계산
+        int padding = (columns - line.length()) / 2;
+
+        // 패딩이 음수일 경우에는 0으로 설정
+        if (padding < 0) {
+            padding = 0;
+        }
+
+        // 중앙 정렬된 메시지 출력 (빈 문자열도 포함)
+        if (line.empty()) {
+            cout << string(columns / 2, ' ') << " " << endl;
+        }
+        else {
+            cout << string(padding, ' ') << line << endl;
+        }
+    }
 }
 
 // 입력 중앙 정렬 함수 정의
@@ -197,127 +213,35 @@ void clearScreen() {
 #endif
 }
 
-// 맵 초기화 함수
-void initializeMap() {
-    srand(static_cast<unsigned>(time(0))); // 랜덤 시드 설정
 
-    // 맵을 빈 칸으로 초기화
-    for (int i = 0; i < MAP_HEIGHT; ++i) {
-        for (int j = 0; j < MAP_WIDTH; ++j) {
-            map[i][j] = ' ';
-        }
-    }
-
-    // 플레이어 위치 설정
-    map[player.y][player.x] = 'o';
-
-    // 몬스터와 아이템 생성
-    for (int i = 0; i < 5; ++i) {
-        Position monster = { rand() % MAP_WIDTH, rand() % MAP_HEIGHT };
-        monsters.push_back(monster);
-        map[monster.y][monster.x] = 'M';
-
-        Position item = { rand() % MAP_WIDTH, rand() % MAP_HEIGHT };
-        items.push_back(item);
-        map[item.y][item.x] = 'I';
-    }
-}
-
-// 커서 위치 이동 함수
-void moveCursorTo(int x, int y) {
-    std::cout << "\033[" << y + 1 << ";" << x + 1 << "H";
-}
-
-// 맵 출력 함수 (버퍼 사용)
-void displayMapBuffer() {
-    // 버퍼에 모든 내용을 저장
-    std::string buffer;
-
-    for (int i = 0; i < MAP_HEIGHT; ++i) {
-        for (int j = 0; j < MAP_WIDTH; ++j) {
-            buffer += map[i][j];
-        }
-        buffer += '\n';
-    }
-
-    // 안내 메시지도 버퍼에 추가
-    buffer += "\n'M' - 몬스터, 'I' - 아이템, 'o' - 플레이어";
-    buffer += "\n화살표 키로 이동하세요. ESC로 종료.";
-
-    // 버퍼를 한 번에 화면에 출력
-    clearScreen();
-    std::cout << buffer;
-}
-
-// 플레이어 이동 함수
-void movePlayer(int dx, int dy) {
-    // 새로운 위치 계산
-    int newX = player.x + dx;
-    int newY = player.y + dy;
-
-    // 맵 경계 체크
-    if (newX < 0 || newX >= MAP_WIDTH || newY < 0 || newY >= MAP_HEIGHT) {
-        return; // 경계를 벗어나면 무시
-    }
-
-    // 현재 위치를 빈 칸으로 갱신하고 해당 위치에 커서 이동 후 출력
-    map[player.y][player.x] = ' ';
-    moveCursorTo(player.x, player.y);
-    std::cout << ' ';
-
-    // 새로운 위치에 대한 업데이트
-    char targetCell = map[newY][newX];
-    if (targetCell == 'M') {
-        std::cout << "몬스터를 만났습니다!" << std::endl;
-        // 몬스터를 만났을 때의 추가 로직을 여기에 추가 가능
-    }
-    else if (targetCell == 'I') {
-        std::cout << "아이템을 획득했습니다!" << std::endl;
-        // 아이템을 획득했을 때의 추가 로직을 여기에 추가 가능
-    }
-
-    // 플레이어 위치 갱신하고 해당 위치에 커서 이동 후 출력
-    player.x = newX;
-    player.y = newY;
-    map[player.y][player.x] = 'o';
-    moveCursorTo(player.x, player.y);
-    std::cout << 'o';
-}
-
-
-
-class Character // 모험가의 상태와 동작 관리
+class Character //모험가의 상태와 동작 관리
 {
     string name;
     int level = 1;
-    int item_num = 0;
+    int item_num = 3;   
     int hp = 100;
     int max_hp = 100;
-    int hp_item = 5;
+    int hp_item = 5;   
     int attack_power = 10;
     int defense = 5;
-    int mon_hp = 100;
 
 public:
     Character(string name) // 생성자
     {
         this->name = name;
-
-        // 출력할 메시지
-        string msg = "▶ 모험가 닉네임은 " + name + "입니다.";
-        printCentered(msg);
+        printCentered(" ");
+        printCentered("▶ 모험가 닉네임은 " + name + "입니다.");
+        printCentered(" ");
+        printCentered(" ");
+        printCentered("[ 기초 아이템 ]");
+        printCentered(" ");
+        printCentered("체력 회복 포션: " + to_string(hp_item) + "개, 시야확장 아이템: " + to_string(item_num) + "개");
     }
 
     void setName(string name)
     {
         this->name = name;
-
-        // 출력할 메시지
-        printCentered("");
-        printCentered("");
-        string msg = "▶ 모험가 닉네임은 " + this->name + "입니다.";
-        printCentered("");
-        printCentered(msg);
+        printCentered("\n▶ 모험가 닉네임이 " + name + "(으)로 변경되었습니다.");
     }
 
     void level_up()
@@ -326,7 +250,7 @@ public:
         max_hp += 20;
         attack_power += 5;
         defense += 3;
-        hp = max_hp;
+        hp = max_hp; // 레벨업 시 체력 풀 회복
         printCentered("\n▶ 모험가의 레벨이 증가했습니다.");
         printCentered("▶ 현재 모험가 level : " + to_string(level) + " (HP: " + to_string(max_hp) +
             ", 공격력: " + to_string(attack_power) + ", 방어력: " + to_string(defense) + ")");
@@ -409,12 +333,17 @@ public:
 
     int attack()
     {
-        int mon_hp = 50 + (rand() % 50); // 몬스터 체력 랜덤 설정
-        printCentered("\n▶ 몬스터를 발견했습니다!");
+        // 강력한 몬스터와 약한 몬스터 중 랜덤 선택
+        bool isStrongMonster = (rand() % 2 == 0);
+        int mon_hp = isStrongMonster ? 80 + (rand() % 50) + (level * 15) : 30 + (rand() % 30) + (level * 5);
+        int mon_attack_power = isStrongMonster ? 10 + (rand() % 10) + (level * 3) : 5 + (rand() % 5) + (level * 2);
+
+        printCentered("\n▶ 몬스터가 등장했습니다! " + string(isStrongMonster ? "강력한 몬스터" : "약한 몬스터") + "입니다.");
+
         while (true)
         {
             int action;
-            printCentered("\n▶ 몬스터와 만났습니다. 무엇을 하시겠습니까? (1: 공격하기, 2: 도망가기) : ");
+            printCentered("\n▶ 무엇을 하시겠습니까? (1: 공격하기, 2: 도망가기)  ");
             cin >> action;
 
             if (action == 1)
@@ -429,13 +358,53 @@ public:
                 if (mon_hp > 0)
                 {
                     printCentered("\n▶ 몬스터가 반격합니다!");
-                    int damage_to_char = (rand() % 15) - defense;
+                    int damage_to_char = mon_attack_power - defense + (rand() % 5);
+
+                    // 특수 공격 여부 랜덤 결정
+                    if (rand() % 4 == 0) // 25% 확률로 특수 공격 발생
+                    {
+                        printCentered(" ");
+                        printCentered(" ******* 주의 ******** ");
+                        printCentered("\n 몬스터가 '특수 공격'을 시도합니다! ");
+                        printCentered("▶ 아이템을 사용하시겠습니까? (1: 사용, 2: 사용하지 않음) ");
+                        int use_item;
+                        cin >> use_item;
+                        if (use_item == 1 && item_num > 0)
+                        {
+                            item_down();
+                            printCentered("▶ 아이템을 사용하여 특수 공격을 막았습니다!");
+                        }
+                        else
+                        {
+                            if (use_item == 1 && item_num == 0)
+                            {
+                                printCentered("▶ 아이템이 없습니다. 피해를 3배로 받습니다!");
+                            }
+                            damage_to_char *= 3;
+                        }
+                    }
+
                     if (damage_to_char < 0) damage_to_char = 0;
                     hp -= damage_to_char;
                     if (hp < 0) hp = 0;
                     take_damage_animation();
                     printCentered("▶ 받은 피해 : " + to_string(damage_to_char));
                     printCentered("▶ 남은 체력 : " + to_string(hp) + " / " + to_string(max_hp));
+
+                    // 체력이 20% 이하일 경우 경고 메시지 출력
+                    if (hp <= (0.2 * max_hp))
+                    {
+                        printCentered("\n 체력이 얼마 남지 않았습니다!");
+                        if (hp_item > 0)
+                        {
+                            printCentered("▶ 자동으로 물약을 사용합니다.");
+                            hp_up();
+                        }
+                        else
+                        {
+                            printCentered("▶ 물약이 없습니다. 주의하세요!");
+                        }
+                    }
                 }
             }
             else if (action == 2)
@@ -448,13 +417,28 @@ public:
                 else
                 {
                     printCentered("\n▶ 도망에 실패했습니다! 몬스터가 공격합니다!");
-                    int damage_to_char = (rand() % 15) - defense;
+                    int damage_to_char = mon_attack_power - defense + (rand() % 5);
                     if (damage_to_char < 0) damage_to_char = 0;
                     hp -= damage_to_char;
                     if (hp < 0) hp = 0;
                     take_damage_animation();
                     printCentered("▶ 받은 피해 : " + to_string(damage_to_char));
                     printCentered("▶ 남은 체력 : " + to_string(hp) + " / " + to_string(max_hp));
+
+                    // 체력이 20% 이하일 경우 경고 메시지 출력
+                    if (hp <= (0.2 * max_hp))
+                    {
+                        printCentered("\n 체력이 얼마 남지 않았습니다!");
+                        if (hp_item > 0)
+                        {
+                            printCentered("▶ 자동으로 물약을 사용합니다.");
+                            hp_up();
+                        }
+                        else
+                        {
+                            printCentered("▶ 물약이 없습니다. 주의하세요!");
+                        }
+                    }
                 }
             }
             else
@@ -466,9 +450,32 @@ public:
             {
                 printCentered("\n▶ 몬스터를 처치했습니다!");
                 victory_pose();
+
+                // 몬스터 처치 후 랜덤 보상 획득
+                int reward = rand() % 4; // 0-3 중 랜덤 값
+                if (reward == 0)
+                {
+                    printCentered("\n▶ 아무 것도 얻지 못했습니다.");
+                }
+                else if (reward == 1)
+                {
+                    hp_item++;
+                    printCentered("\n▶ 체력 포션을 획득했습니다! (남은 포션: " + to_string(hp_item) + ")");
+                }
+                else if (reward == 2)
+                {
+                    item_up();
+                }
+                else
+                {
+                    hp_item += 2;
+                    printCentered("\n▶ 체력 포션 2개를 획득했습니다! (남은 포션: " + to_string(hp_item) + ")");
+                }
+
                 level_up();
                 return 1;
             }
+
             if (hp == 0)
             {
                 printCentered("\n▶ 모험가가 쓰러졌습니다. 게임 오버.");
@@ -482,7 +489,9 @@ void displayEnvironment(string description)
 {
     system("cls");
     printCentered("================================================================================================");
-    std::cout << description << endl;
+    printCentered(""); 
+    printCentered(description); 
+    printCentered(""); 
     printCentered("================================================================================================");
 }
 
@@ -506,15 +515,23 @@ void animateCharacterMovement() {
     string animation[5] = { "^", "-^", "^-", "^", "-^" };
 
     for (int i = 0; i < 5; i++) {
-        // 중앙 정렬된 애니메이션 출력
+        // 화면을 지우고 새로운 프레임 출력
+        system("cls");
+        printCentered("================================================================================================");
+        printCentered(""); 
         printCentered(animation[i]);
+        printCentered(""); 
+        printCentered("================================================================================================");
+
         Sleep(300); // 각 프레임 출력 후 300ms 대기
     }
-    std::cout << endl; // 줄바꿈
+
+    // 마지막에 줄바꿈 추가
+    std::cout << endl;
 }
 
-
-int main() {
+int main()
+{
     maximizeConsoleWindow();
     srand(time(0)); // 랜덤 시드 설정
     int game_start;
@@ -531,8 +548,8 @@ int main() {
         printCentered("                                    WELCOME TO THE RPG GAME                                    ");
         printCentered("                                                                                               ");
         printCentered("================================================================================================");
-        printCentered("");
-        printCentered("");
+        printCentered(" ");
+        printCentered(" ");
         printCentered("RRRRRRRRRRRRRRRRR   PPPPPPPPPPPPPPPPP           GGGGGGGGGGGGG ");
         printCentered("R::::::::::::::::R  P::::::::::::::::P       GGG::::::::::::G");
         printCentered("R::::::RRRRRR:::::R P::::::PPPPPP:::::P    GG:::::::::::::::G");
@@ -549,10 +566,9 @@ int main() {
         printCentered("R::::::R     R:::::RP::::::::P             GG:::::::::::::::G");
         printCentered("R::::::R     R:::::RP::::::::P               GGG::::::GGG:::G");
         printCentered("RRRRRRRR     RRRRRRRPPPPPPPPPP                  GGGGGG   GGGG");
-        printCentered("");
-        printCentered("");
+        printCentered(" ");
+        printCentered(" ");
         printCentered("================================================================================================");
-
 
         // 선택지 출력
         string startText = (selection == 1 ? "▶ " : "  ") + string("시작하기");
@@ -577,6 +593,7 @@ int main() {
         }
     }
 
+
     if (selection == 2)
     {
         std::cout << "▶ 게임이 종료되었습니다." << endl;
@@ -586,31 +603,29 @@ int main() {
     // 게임 시작 선택 시 스토리 출력
     system("cls");
 
-    // 구분선 및 스킵 안내 출력 (중앙 정렬)
     printCentered("================================================================================================");
-    printCentered("");
+    printCentered(" ");
     printCentered("스토리를 읽는 도중 Enter 키를 누르면 바로 스킵됩니다.");
-    printCentered("");
+    printCentered(" ");
     printCentered("================================================================================================");
 
     string story[] = {
-     "  ",
-     "  ",
-     "옛날, 신들이 세상을 창조하고 인간들에게 축복을 내리던 시절이 있었습니다.",
-     "하지만 인간의 탐욕은 끝이 없었고, 그로 인해 신들은 분노하여 세상에서 물러나게 되었습니다.",
-     "신들의 축복이 사라지자, 어둠의 세력이 세상을 집어삼키기 시작했고, 괴물들이 인간들의 마을을 공격했습니다.",
-     "당신이 태어난 마을, 에델하임은 이러한 혼란 속에서도 평화로운 안식처로 남아 있었습니다.",
-     "그러나 최근, 어둠의 세력인 '그림자 군단'이 마을 경계에 나타나 주민들을 위협하기 시작했습니다.",
-     "'용감한 모험가여, 우리의 희망은 당신에게 달려 있습니다!' 촌장의 간절한 외침이 들려옵니다.",
-     "이제 당신은 마을을 구하기 위해 모험의 길을 떠나야 합니다. 하지만 이 여정은 단순한 전투만이 아닙니다.",
-     "고대의 유물과 신들의 비밀을 찾아내어, 잃어버린 축복을 되찾아야 합니다.",
-     "당신의 선택이 세상의 운명을 결정짓습니다. 용기와 지혜로 가득한 여정을 시작해 보세요.",
-     "신비로운 동료들과 강력한 적들이 기다리고 있는 이 길에, 여정을 떠날 준비가 되셨나요?",
-     "  ",
-     "  ",
-     "  "
+        "  ",
+        "  ",
+        "옛날, 신들이 세상을 창조하고 인간들에게 축복을 내리던 시절이 있었습니다.",
+        "하지만 인간의 탐욕은 끝이 없었고, 그로 인해 신들은 분노하여 세상에서 물러나게 되었습니다.",
+        "신들의 축복이 사라지자, 어둠의 세력이 세상을 집어삼키기 시작했고, 괴물들이 인간들의 마을을 공격했습니다.",
+        "당신이 태어난 마을, 에델하임은 이러한 혼란 속에서도 평화로운 안식처로 남아 있었습니다.",
+        "그러나 최근, 어둠의 세력인 '그림자 군단'이 마을 경계에 나타나 주민들을 위협하기 시작했습니다.",
+        "'용감한 모험가여, 우리의 희망은 당신에게 달려 있습니다!' 촌장의 간절한 외침이 들려옵니다.",
+        "이제 당신은 마을을 구하기 위해 모험의 길을 떠나야 합니다. 하지만 이 여정은 단순한 전투만이 아닙니다.",
+        "고대의 유물과 신들의 비밀을 찾아내어, 잃어버린 축복을 되찾아야 합니다.",
+        "당신의 선택이 세상의 운명을 결정짓습니다. 용기와 지혜로 가득한 여정을 시작해 보세요.",
+        "신비로운 동료들과 강력한 적들이 기다리고 있는 이 길에, 여정을 떠날 준비가 되셨나요?",
+        "  ",
+        "  ",
+        "  "
     };
-
 
     bool skip = false; // 스토리 스킵 여부를 나타내는 플래그
 
@@ -644,24 +659,28 @@ int main() {
             Sleep(50);
 
             // Enter 키 입력 시 스토리 스킵
-            if (_kbhit() && _getch() == '\r') {
-                skip = true;
-                std::cout << line.substr(i + 1); // 현재 줄 나머지 부분을 바로 출력
-                break;
+            if (_kbhit()) {
+                char key = _getch();
+                if (key == '\r') { // Enter 키 감지
+                    skip = true;
+                    std::cout << line.substr(i + 1); // 현재 줄 나머지 부분을 바로 출력
+                    break;
+                }
             }
         }
         std::cout << endl;
+
+        // 입력 버퍼 클리어 (엔터 키 입력으로 인한 추가 입력 방지)
+        FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
     }
 
     // 중앙 정렬된 구분선 출력
     printCentered("================================================================================================");
 
     // Enter 키 입력을 기다리기
-    printCentered("계속하려면 Enter 키를 눌러주세요...");
-    std::cin.ignore(); // 기존 입력 버퍼 정리
-    std::cin.get();    // Enter 키 입력 대기
+    waitForEnter();
 
-    // 여정을 준비하는 진행 표시
+    // 여정을 준비하는 진행 
     system("cls");
     printCenteredSlowly("여정을 준비하고 있습니다. 조금만 기다려주세요 :) ...");
     Sleep(1500);
@@ -670,16 +689,14 @@ int main() {
     Sleep(1500);
 
     system("cls");
-
 
     printCentered("================================================================================================");
-    printCentered("");
 
     int terminalHeight = 20; // 터미널 높이 예시
     printEmptyLines(terminalHeight / 2 - 2);
 
     printCentered("모험가의 닉네임을 입력해주세요(공백 없이 작성해주세요)");
-    printCentered("");
+    printCentered(" ");
     cin.sync(); // 입력 버퍼 정리
 
     cin.sync(); // 입력 버퍼 정리
@@ -691,36 +708,35 @@ int main() {
 
     printEmptyLines(terminalHeight / 2 - 2);
 
-
-    printCentered("");
-    printCentered("");
     printCentered("================================================================================================");
-    system("pause");
+    waitForEnter();
     system("cls");
 
 
+
     printCentered("================================================================================================");
-    printCentered("");
-    printCentered("");
+    printCentered(" ");
+    printCentered(" ");
     printCentered("RPG WORLD에 오신 것을 환영합니다!");
-    printCentered("");
-    printCentered("");
+    printCentered(" ");
+    printCentered(" ");
     printCentered("================================================================================================");
-    printCentered("");
-    printCentered("");
-    printCentered("");
-    printCentered("");
-    printCentered("");
-    printCentered("모험가 " + name + "님 어서오세요! 여정을 떠날 준비가 되셨나요?!?");
-    printCentered("");
-    printCentered("");
-    printCentered("");
-    printCentered("");
-    printCentered("");
+    printCentered(" ");
+    printCentered(" ");
+    printCentered(" ");
+    printCentered(" ");
+    printCentered(" ");
+    printCentered("모험가 " + name + "님 어서오세요! 모험을 시작해봅시다!!");
+    printCentered(" ");
+    printCentered(" ");
+    printCentered(" ");
+    printCentered(" ");
+    printCentered(" ");
     printCentered("================================================================================================");
 
-    Sleep(5000);
+    Sleep(3000);
     system("cls");
+    Character character(name);
 
 
     while (1) {
@@ -728,168 +744,121 @@ int main() {
         char key;
         bool selected = false;
 
-        const int NUM_OPTIONS = 7;  // 선택지 개수 정의
-        std::string options[NUM_OPTIONS] = {
-            "모험가 닉네임 변경",
-            "모험가 레벨업",
-            "시야확장 물약 획득",
-            "시야확장 물약 사용",
-            "체력회복 포션 사용",
-            "여정 떠나러 가기",
-            "현재 상태창 보기"
-        };
-
         while (!selected) {
             system("cls");
             printCentered("================================================================================================");
+            printCentered(" ");
             printCentered("                                      어떤 행동을 하시겠나요?                                     ");
+            printCentered(" ");
             printCentered("================================================================================================");
-
-            // 모든 옵션을 출력하면서 선택된 항목에 '◀' 표시
-            for (int i = 0; i < NUM_OPTIONS; i++) {
-                std::string line = "  " + std::to_string(i + 1) + ". " + options[i];
-                if (motion_in == i + 1) {
-                    line += " ◀";
-                }
-                printCentered(line);
-            }
-
-            printCentered("\n                                                 (Enter: 선택, 0: 종료)");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered((motion_in == 1 ? " 1. 모험가 닉네임 변경 ◀" : " 1. 모험가 닉네임 변경"));
+            printCentered((motion_in == 2 ? " 2. 모험가 레벨업 ◀" : " 2. 모험가 레벨업"));
+            printCentered((motion_in == 3 ? " 3. 시야확장 물약 획득 ◀" : " 3. 시야확장 물약 획득"));
+            printCentered((motion_in == 4 ? " 4. 시야확장 물약 사용 ◀" : " 4. 시야확장 물약 사용"));
+            printCentered((motion_in == 5 ? " 5. 체력회복 포션 사용 ◀" : " 5. 체력회복 포션 사용"));
+            printCentered((motion_in == 6 ? " 6. 여정 떠나러 가기 ◀" : " 6. 여정 떠나러 가기"));
+            printCentered((motion_in == 7 ? " 7. 현재 상태창 보기 ◀" : " 7. 현재 상태창 보기"));
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" (Enter: 선택, 0: 종료)");
+            printCentered(" ");
+            printCentered(" ");
             printCentered("================================================================================================");
 
             key = _getch();
             if (key == 80) { // 아래 화살표
                 motion_in++;
-                if (motion_in > NUM_OPTIONS) motion_in = 1;
+                if (motion_in > 7) motion_in = 1;
             }
             else if (key == 72) { // 위 화살표
                 motion_in--;
-                if (motion_in < 1) motion_in = NUM_OPTIONS;
+                if (motion_in < 1) motion_in = 7;
             }
             else if (key == 13) { // Enter 키
                 selected = true;
             }
             else if (key == '0') { // 종료
-                printCentered("▶ 게임이 종료되었습니다.");
                 return 0;
             }
         }
 
-        if (motion_in == 1) {
-            printCentered("\n▶ 새로운 모험가의 닉네임을 입력해주세요 : ");
-            std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n'); // 입력 버퍼 정리
-            std::string name;
-            std::getline(std::cin, name);
+        if (motion_in == 0) {
+            printCentered("▶ 게임 종료");
+            return -1;
+        }
+        else if (motion_in == 1) {
+            system("cls");
+            printCentered("\n▶ 새로운 모험가의 닉네임을 입력해주세요:");
+            cin.ignore(); // 입력 버퍼 정리
+            getline(cin, name);
             char1.setName(name);
         }
         else if (motion_in == 2) {
+            system("cls");
             char1.level_up();
         }
         else if (motion_in == 3) {
+            system("cls");
             char1.item_up();
         }
         else if (motion_in == 4) {
+            system("cls");
             char1.item_down();
         }
         else if (motion_in == 5) {
+            system("cls");
             char1.use_potion_animation();
             char1.hp_up();
         }
         else if (motion_in == 6) {
-            std::string location;
-            const int NUM_DESTINATIONS = 5;
-            std::string destinations[NUM_DESTINATIONS] = { "바닷가", "동굴", "숲", "마을", "돌아가기" };
-            int currentSelection = 0; // 현재 선택된 여행지 인덱스
-            bool selected = false;
 
-            while (!selected) {
-                system("cls");
-                printCentered("================================================================================================");
-                printCentered("           어디로 떠나시겠습니까?           ");
-                printCentered("================================================================================================");
 
-                // 여행지 출력 (현재 선택된 항목에 ◀ 표시)
-                for (int i = 0; i < NUM_DESTINATIONS; ++i) {
-                    std::string line = "  " + std::to_string(i + 1) + ". " + destinations[i];
-                    if (i == currentSelection) {
-                        line += " ◀"; // 선택된 항목 표시
-                    }
-                    printCentered(line);
-                }
+            system("cls");
+            printCentered("================================================================================================");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered("           어디로 떠나시겠습니까?           ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered("================================================================================================");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered("1. 바닷가");
+            printCentered("2. 동굴");
+            printCentered("3. 숲");
+            printCentered("4. 마을");
+            printCentered("5. 돌아가기");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered(" ");
+            printCentered("번호에 맞게 창에 입력해주시면 됩니다! :)");
+            printCentered("================================================================================================");
 
-                printCentered("================================================================================================");
-                printCentered("\n                                                 (Enter: 선택, 0: 종료)");
+            int destination;
+            cin >> destination;
 
-                // 키 입력 처리
-                int key = _getch();
-                if (key == 80) { // 아래 화살표
-                    currentSelection++;
-                    if (currentSelection >= NUM_DESTINATIONS) currentSelection = 0;
-                }
-                else if (key == 72) { // 위 화살표
-                    currentSelection--;
-                    if (currentSelection < 0) currentSelection = NUM_DESTINATIONS - 1;
-                }
-                else if (key == 13) { // Enter 키
-                    location = destinations[currentSelection];
-                    selected = true;
-                }
-                else if (key == '0') { // 종료
-                    return 0;
-                }
+            if (destination == 5) {
+                continue;
             }
-
-            // 선택된 장소 출력
-            system("cls");
-            printCentered("================================================================================================");
-            printCentered("           " + location + "으로 떠납니다!           ");
-            printCentered("================================================================================================");
-            std::cout << location << std::endl;
-
-            system("cls");
-            Sleep(1000);
-            printCentered("================================================================================================");
-            printCenteredSlowly(location + "(으)로 이동 중입니다... ");
-            printCentered("================================================================================================");
-
-            const std::string frames[] = {
-                R"(
-            O
-           /|\
-           / \
-        )",
-                R"(
-           \O/
-            |
-           / \
-        )",
-                R"(
-            O
-           /|\
-           / \
-        )",
-                R"(
-           O
-          /|\
-          / \
-        )"
-            };
-
-            for (int i = 0; i < 24; ++i) { // 반복 횟수 조정 가능
-                system("cls");
-                int offset = i * 2 - 20;
-
-                printCenteredArt(frames[i % 4], offset);
-                printCentered("================================================================================================");
-                printCentered(location + "(으)로 이동 중입니다! 조금만 기다려 주세요");
-                printCentered("================================================================================================");
-                Sleep(300);
-            }
-
-            system("cls");
-            // 여정 선택 로직...
-            if (location == "바닷가") {
-                std::string ascii_art = R"(
+            else if (motion_in == 6)
+            {
+                string location;
+                // 여정 선택 로직...
+                if (destination == 1) {
+                    location = "바닷가";
+                    ascii_art = R"(
+       
 
 ---------,..      .,,---~~~~~~~~~~~~~~~~
 .----,,,,,..      ..,,,---------------~-
@@ -919,91 +888,259 @@ int main() {
 !!;;:~.   .,,,. .               -;;;;;;;
 
         )";
-                printCenteredASCII(ascii_art);
-
-                Sleep(5000);
-            }
-            else if (location == "동굴") {
-                std::string ascii_art = R"(
+                }
+                else if (destination == 2) {
+                    location = "동굴";
+                    ascii_art = R"(
                                
-          
+                                !;;::,            
+                            ,,----~~::--          
+                       ,,,-~:;*!:~,:::;;-         
+                 ,.-,~,~,-~-,;~~:;;~:::;~         
+               ..,::,.--:~:;::,-~:;-~~;;:,,.      
+               ,,~:,..,,;:::~~.,-;:,,-;!*=*;-     
+               ,-~,.,,,~!;:~~~.,~;:,-;;!*=!!!,    
+              ,,~,....-;*;:~--.-:;;--;!!=*;!*,    
+              --~,,-,,;;=;~,,-,,,:;::;;**=!!*,    
+           ,.-~~~,-.,-:;=*----,,,:!:;!:*==*!*,    
+         ,.,~---~,-.,-:!*=:~:~...-!-:!!*==***,    
+        .,,-:-,,::..,-!===!-:~-..-*:;!!;-~*!*-    
+        .,,-~,,:;:,.,;*=*==!!;-..-*:*;-,-:***!.   
+        ,-,~~--:;-..~!*=;==*;*:.,-*:!:,.-:!=**!:  
+        ~:-~:--;;,.,;;==;=$#~*:,,-***:~.,~!****;  
+       .,~:;~,-;;-,-;*=##$####$;;:=**:,,,~;*!**;  
+       --:;:--;*!-,:*==######$##$!***!~:~~:***=;  
+      .~~:!;;!--!*:;=$######$$###*!*;;-,~-:*=**;  
+     .,,:;!!;:~!*$=*=#####$#$$###$==;:.,-~,*==*;  
+     ,--~:!!;:,~*===$####$$$$$##$#=*::,.,:;****;  
+     ,,-!!;:*:,~*$=$######$$$#$#$#*;!:,.,:;!**=,  
+     ,-~*!;~=;,;=$#$######$$$$$$$#$*=!,.-;;;**=   
+     -~~!;!:=!-*=$######$#$=$$$$$##*!*-,-;*;*==.  
+    .~-;!;*!=!:*=#######$$=*=$$$$$#$:!~~~;*===*:  
+    ,::;;;**=!:*=###$$#$==*;;=$$$$$#!::~~:*=*=*;  
+    ,:;!!;*!==;=$$####$=*=*:~*$$$###;:;;~:;====;  
+  ,-~!;*!;*!==;=$$$##$==*=*:-:==#$$$:;~~;!*====!  
+ :;=**;**;*!==*=$$$##$==*=*;~~!$$$$;~;;;;::;*=*!. 
+ .!====**;*=$!==$$$$=**********=$$;~:;~;;~~;***=~ 
+   .=!!**!=$$*=**===**!!!!!!!!;;;::;*;:!*;!!**==: 
+.~-;=**;!!*====*!!!*;~~-------:;;;:;!;!=*!*!====;.
+ ~=====*:~~!;~-,,,,,. ........,-::;;!**=!*====*=~ 
+ -===$=!!;*!;~-          .          .,~;;;:;;::.  
+    -~:~---~:-,,.....,.          ., ...... .      
+         .,,,,..... .-............,..  .          
                                                   
                                       
                                         
         )";
-                printCenteredASCII(ascii_art);
-
-                Sleep(5000);
-            }
-            else if (location == "숲") {
-                std::string ascii_art = R"(
+                }
+                else if (destination == 3) {
+                    location = "숲";
+                    ascii_art = R"(
        
 
-
+!*=!***;::!!!!=!;;***===**!!*::**;::*=!;!!;;;**=!;
+$##=*=*=*!;;!==***!*!;!;!;;:****!!;!*=!*!;::!*==*$
+;$$*!!=**==!!=*!*!;*!;::;;:!!!!*!!*=*==;:;*=$***=$
+;=* !;;:*;!;!;;:;:-~-     ~--::;;:!!!==!!=***=!*==
+ -*.!*:;!~                    .---:::;.:;!*;;;;,~=
+ -!!;~;!;...                .........,:;-=:!:,:*;=
+.=**~!;=:.....                ........::!=,:=:~!*=
+-$*!~:!*- .               .   .........:;=.:!$::**
+;!*;~~~;,                    .........-;;*:~:$;~!*
+$**~:,::,      .           ......-:;;;;;:*$~:=;~:*
+$!!:~,,~.    ..... .  .. ......,~::;;;;;:;$:~!:~~;
+$!:!,.,:,....................,::::;;;!:!~:$;~;-~::
+$;;:.-!:, .....      .  ...::::::;!;;;!!-~$;~*,-::
+$;;:.-;:~---- ,. .-----~~~~~::::!!*!;!!!-~$;~*,,~;
+=:~~.~;:~~~~~~~~~~----~~~~::::;;!!=;!!:~~-=::*;.-;
+=:~~.~;:~::::~~~~::~~~::::::;!!;!!*;!!*:~-=,:;*,-~
+=::~:;!:-::::::::::::::::;;;;!;;;;!;:;::-~=,::~,-~
+=~:-~;!;-;;;;;;;;;:;;;;:::::::~--~:::~~~-~=,;;~,-~
+=~~--;=*~;;;;;;;:~:::~~~~~~~~~-~::::::::-~=-;;;-~-
+=~:~:.**:~,.,,,-~~:::~::::::::;!;;;!!~~~-~=-;=;~~-
+=~;!,~~~!~;,........,,,,,;::*;;;;!!:::::-~=:!=,:;~
+=::~,,-----~,,......,----------:!!;!;:~--:=---,~!;
+=!~~~,-,-,-----~~-..,.,,,.........--~-:~-;=~~-.-:!
+=;~~~-:-----,,----~~-,---,,----,,,,,,,,,~;*,.,,-:!
+*;::-,,,~:----------~:::-~----,,,,,....,-!*~::,~:!
+=;::--...,,~----------~~:~,..........,,-~!*-~---:;
+$*:!---.....,~~~~------~~::-,....,,,---,-;=-,-~::,
+$=!*~-:-.......-~~~------~~~;~--------.   ~,-:~,: 
+$***:~-;~.......,~~~-------~~::------,    =:~-~.-.
+*;**~:--;:--....,~:;~~-~~~~-~~::,,.--:. .-*~-:-:~ 
+*:*=~::;:*!*-,,--,-:;~-------~:::-.   :~:~~,-.:,:~
+!;;;!;::;!*~:--!~,-!~------~--~:::    ::,-~:,- ..,
+:!;!;!!!!;!;::;!;:-~:~~~~~~----,,.:~- . .~~~-:,. .
+;*;!**;!**;=;!:*!!:*;:::~~~~~~,  .  ,  .,;-.,-,,. 
 
         )";
-                printCenteredASCII(ascii_art);
-
-                Sleep(5000);
-            }
-            else if (location == "마을") {
-                std::string ascii_art = R"(
+                }
+                else if (destination == 4) {
+                    location = "마을";
+                    ascii_art = R"(
 
 
+,,,,,,,,,,,,,,,---~!~!!!:;$*,,,-==;;!*=**,,,,,,,,.,,,,,,,,,,
+,,,,,,,,,,,,,,,-~;:!!!!;,,!$-,,:$:$#=;,,!~,,,,,.......,,,,,,
+,,,,,,,,,,,,,,,:!;!!:;=$!,,=;,,;$!~,,,:~,-,,,,,,,,,,,,,,,,,,
+,,,,,.,,,,,,,,,,,,,,,,,,!;-=#;~$*,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,.,,,,,,,,-,,,,,,,;*$$$:-,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,--,,,!=$$-,,,,,,,,,,,,,,,,,,,,,,,,,,---
+,,,,,,,,,,,,,,,,,,,.,-~~-,~=$=,,,,,,,,,,,,,,,,,,,,,,,-:~~~~~
+,,,,,,,,,,,,,,,,,,-~~~~~~~~=$=,-~~~~,,,,,,,,,,,,,,,:~~~~:~~~
+,,,,,,--:~~~--,-~~~~~~~~~~;=$$~~~~~~~--,,--~~-,,,-~;~~~-~~~~
+;~---:~*!*,......:~~~~~~::;=$$:~~~~~~~~::~:~~~~-~:;!-~~---~~
+::~~~~!!;~-..... .;~~~~:..:*$$!!~~~~~~~;::;:~~~~~;,!;,~--,-~
+::~~~~-;~---....  ,;::~ ..-!$$;!!::~:~~::~~:;;::;:.=*.~:!~;:
+:::~~~-:--,--...   .-~  ..-!$$~!;:----:-~--:------.=*.----~~
+:::~~~~~;*:,~...    -,  ..-=$;~~!;--------------~-~;:--~~~~~
+::::~~~~-*!,,;;;;;!!*::::;!=#=!;::-.,,,,,---~~~~~~----~~-~~~
+::::~~~~--~,,~~-#$*-;,,##~;=##=*~~~--,,,,,.,.. .,,,-~~-~~~~~
+:::::~~~--~~,---##*-;.,##~!$$$------~~~~~~~~~~~:,....,,-:~~~
+:::::~~~~---,-------;~:$$:*$$$:~~---------------:,,  ,.,-~~~
+::::::~~~----:::::::~-,~;$=:$$;$,-,-------------:,,  ,,,,~~~
+::::::~~~~---:----~,,,,~;~-,,~*;~~,~;;~--------~-,, .,,-~~~~
+:::::::~~~~---~---;==;---------~!===*=:~------~-..  ,,-~~~~~
+;;;;;;;;;;;;;:---~:***==========*****;::-----:-,.. ,,,:~~~~~
+::::::::::::::---~~*!=**=****===****:;;:---~~-,.. ,,,~~~~~~~
+:::::$@#!;::::---:;;:::;;::;:;;::::---~~-~~-,,,  ,,,-~~~~~~~
+:::::$@#!;::::-----~----~~~~~~-------~~~--,,.. .,,,-:~~~~~~~
+:::::$##!;::::---------------------~~~-,,,,. .,,,,-:~~~~~~~~
+:::::;::::::::------------------~~---,,,,,  .,.,--~~~~~~~~~~
+::::::::::::::-------------:~~----,,,,,.. ..,,,-~~~~~~~~~~~~
+:::;:::;:::::~---------~~~~----,,.....   .,,,--~~~~~~~~~~~~~
+::::::::~-----------~~~------,,,,,.    .,,,,--~~~~~~~~~~~~~~
+--------------~~~~~------,,,,,,..  ...,,,,---:~~~~~~~~~~~~~~
+-------~~~~~~-,,------,,,,,,..   .,,,,,,---~:~~~~~~~~~~~~~~~
+---~~~~~-------,,,,,,,,,,,.   ..,,,,,,,--~~~~~~~~~~~~~~~~~::
+~~~------,,,,,,,,,,,,.,..  ..,,,,,,--,--:~~~~~~~~~~~~~~~~~::
+----,,,,,,,,,,,,,....     ,,,,,,,-----~~~~~~~~~~~~~~~~~~~:;;
+-,,,,,,,,,,..          ....,,,,,----~:~~~~-~~~~~~~~~:::~~:-:
+...,,,,..           ..,,...,,,----~~~~~~-~~~-,~~~~::::~~:::;
+,,...            .,,,,,,,,,-----~-,,--- ~-~-,..,,::::;:~~~!!
+..          ...,,,,,,,,,,------~~---~---~--~-----~:~:;~~~~::
 
 )";
+                }
+                else {
+                    cout << "잘못된 입력입니다.다시 선택해주세요." << endl;
+                    waitForEnter();
+                    continue;
+                }
+                // 이후에 ascii_art 출력하는 부분 사용...
+
+                system("cls");
+                printCentered("================================================================================================");
+                printCentered("           " + location + "으로 떠납니다!           ");
+                printCentered("================================================================================================");
+
+                Sleep(1000);
+                system("cls");
+                printCentered("================================================================================================");
+                printCenteredSlowly(location + "(으)로 이동 중입니다... ");
+                printCentered("================================================================================================");
+
+                // 이동 중 애니메이션 프레임
+                const string frames[] = {
+                    R"(
+            O
+           /|\
+           / \
+        )",
+            R"(
+           \O/
+            |
+           / \
+        )",
+            R"(
+            O
+           /|\
+           / \
+        )",
+            R"(
+           O
+          /|\
+          / \
+        )"
+                };
+
+                // 애니메이션 출력
+                for (int i = 0; i < 24; ++i) {
+                    system("cls");
+                    int offset = i * 2 - 20;
+                    printCenteredArt(frames[i % 4], offset);
+                    printCentered("================================================================================================");
+                    printCentered(location + "(으)로 이동 중입니다! 조금만 기다려 주세요");
+                    printCentered("================================================================================================");
+                    Sleep(300);
+                }
+
+                // 도착 후 환경 설명
+                system("cls");
                 printCenteredASCII(ascii_art);
-
-                Sleep(5000);
-            }
-            else {
-                std::cout << "잘못된 입력입니다. 다시 선택해주세요." << std::endl;
-                system("pause");
-                continue; // continue를 사용하여 루프를 다시 시작
+                Sleep(3000);
+                printCenteredSlowly(location + "에 도착했습니다.");
+                waitForEnter();
             }
 
-            printCenteredSlowly(location + "에 도착하였습니다.");
-            waitForEnter();
-        }
+            while (1) {
+                int direction;
+                system("cls");
+                printCentered("\n▶ 어디로 이동하시겠습니까? (1: 위, 2: 왼쪽, 3: 아래, 4: 오른쪽, 0: 나가기)  ");
+                cin >> direction;
 
-        initializeMap();
-        displayMapBuffer(); // 처음 한 번 전체 맵을 출력
-
-        while (true) {
-            // 키 입력 처리
-            if (_kbhit()) {
-                char key = _getch();
-
-                if (key == 27) { // ESC 키
+                if (direction == 0) {
                     break;
                 }
-                else if (key == -32 || key == 224) { // 화살표 키 (확장 코드)
-                    key = _getch(); // 방향키 확인
-                    switch (key) {
-                    case 72: // ↑
-                        movePlayer(0, -1);
-                        break;
-                    case 80: // ↓
-                        movePlayer(0, 1);
-                        break;
-                    case 75: // ←
-                        movePlayer(-1, 0);
-                        break;
-                    case 77: // →
-                        movePlayer(1, 0);
-                        break;
+
+                string movementMessage;
+
+                if (direction == 1) {
+                    movementMessage = "당신은 위쪽으로 이동하고 있습니다...";
+                }
+                else if (direction == 2) {
+                    movementMessage = "당신은 왼쪽으로 이동하고 있습니다...";
+                }
+                else if (direction == 3) {
+                    movementMessage = "당신은 아래쪽으로 이동하고 있습니다...";
+                }
+                else if (direction == 4) {
+                    movementMessage = "당신은 오른쪽으로 이동하고 있습니다...";
+                }
+                else {
+                    printCentered("\n▶ 잘못된 입력입니다. 다시 선택해주세요.");
+                    system("pause");
+                    continue; // 잘못된 입력 시 루프 처음으로 돌아감
+                }
+
+                // 이동 메시지와 애니메이션 출력
+                displayEnvironment(movementMessage);
+                animateCharacterMovement();
+
+                // 몬스터 발견 여부 결정 (애니메이션 이후에 실행)
+                if (rand() % 3 == 0) {
+                    system("cls");
+                    printCentered("\n▶ 몬스터를 발견했습니다!");
+                  
+
+                    int result = char1.attack();
+                    if (result == 0) {
+                        printCentered("▶ 게임 종료");
+                        return -1;
                     }
                 }
-
-                // 몬스터와 아이템이 모두 없어지면 종료
-                if (monsters.empty() && items.empty()) {
-                    std::cout << "\n▶ 모든 몬스터를 처치하고 모든 아이템을 획득했습니다!" << std::endl;
-                    break;
-                }
             }
         }
+        else if (motion_in == 7)
+        {
+            system("cls");
+            char1.info();
+        }
+        else {
+            cout << "\n▶ 잘못된 입력입니다. 다시 선택해주세요." << endl;
+        }
 
-        std::cout << "▶ 게임 종료" << std::endl;
-        return 0;
+        system("pause");
     }
+    return 0;
 }

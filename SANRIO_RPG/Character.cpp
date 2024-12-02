@@ -383,17 +383,17 @@ public:
 
             // 체력이 20% 미만일 경우 가능한 모든 물약 사용
             while (hp <= (0.2 * max_hp) && hp_item > 0) {
-                printCentered("▶ 체력이 위험 수준입니다! 자동으로 물약을 사용합니다.");
+                printCentered(" 체력이 위험 수준입니다! 자동으로 물약을 사용합니다.");
                 hp_up(); // 물약 사용하여 체력 회복
             }
 
             if (hp <= (0.2 * max_hp) && hp_item == 0) {
-                printCentered("▶ 체력이 위험합니다! 하지만 물약이 없습니다. 주의하세요!");
+                printCentered(" 체력이 위험합니다! 하지만 물약이 없습니다. 주의하세요!");
             }
 
             if (hp <= 0) {
                 printCentered("\n▶ 용에게 패배했습니다. 마을이 멸망했습니다.");
-                printCentered("▶ 엔딩: '마을의 멸망'");
+                printCentered(" 엔딩: '마을의 멸망'");
                 exit(0);
             }
         }
@@ -473,7 +473,7 @@ public:
         }
         hp = min(hp + 30, max_hp);
         hp_item--;
-        printCentered("\n▶ 포션을 사용하여 체력을 회복했습니다.");
+        printCentered("\n 포션을 사용하여 체력을 회복했습니다.");
         printCentered("▶ 현재 HP : " + to_string(hp) + " / " + to_string(max_hp));
         printCentered("▶ 남은 포션 갯수 : " + to_string(hp_item));
     }

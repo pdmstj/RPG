@@ -269,7 +269,95 @@ public:
                 printCentered("▶ 레벨 보너스: 체력 포션 " + to_string(bonus_potions) + "개, 아이템 " + to_string(bonus_items) + "개 획득!");
             }
         }
+
+        if (levels_gained > 0) {
+            printCentered("▶ 레벨이 " + to_string(levels_gained) + " 만큼 상승하여 현재 레벨: " + to_string(level) + " 입니다.");
+        }
+
+        if (level == MAX_LEVEL) {
+            printCentered("▶ 축하합니다! 최대 레벨인 " + to_string(MAX_LEVEL) + "에 도달했습니다.");
+            printCentered(" 괴물들의 보스와 싸울 준비가 되었습니다!");
+            boss_fight();
+        }
     }
+
+    void boss_fight() {
+        printCentered("\n▶ '용'과 싸우시겠습니까? (1: 싸운다, 2: 싸우지 않는다)");
+        int choice;
+        cin >> choice;
+
+        if (choice == 1) {
+            system("cls");
+            printCentered("▶ '용'과의 최종 결전이 시작됩니다!");
+            final_boss_battle();
+        }
+        else if (choice == 2) {
+            system("cls");
+            printCentered("▶ 용과 싸우기를 거부했습니다.");
+            printCentered("▶ 당신은 평생 용사를 양성하며 괴물들과의 싸움을 이어갑니다.");
+            printCentered("▶ 평생 지속된 싸움은 당신의 이름을 전설로 남겼습니다.");
+            printCentered("▶ 엔딩: '전설의 용사, 끝없는 싸움'");
+            exit(0);
+        }
+        else {
+            printCentered("▶ 잘못된 입력입니다. 다시 선택해주세요.");
+            boss_fight();
+        }
+    }
+
+    void final_boss_battle() {
+        int dragon_hp = 500; // 보스 체력
+        int dragon_attack_power = 50; // 보스 공격력
+        bool is_defeated = false;
+
+        while (true) {
+            printCentered("\n▶ 무엇을 하시겠습니까? (1: 공격, 2: 방어)");
+            int action;
+            cin >> action;
+
+            if (action == 1) {
+                int damage_to_dragon = attack_power + (rand() % 10);
+                dragon_hp -= damage_to_dragon;
+                if (dragon_hp < 0) dragon_hp = 0;
+
+                printCentered("▶ 용에게 " + to_string(damage_to_dragon) + "의 피해를 입혔습니다.");
+                printCentered("▶ 남은 용의 체력: " + to_string(dragon_hp));
+
+                if (dragon_hp == 0) {
+                    printCentered("\n▶ 용을 처치했습니다! 마을을 구했습니다!");
+                    printCentered("▶ 엔딩: '위대한 용사'");
+                    exit(0);
+                }
+            }
+            else if (action == 2) {
+                printCentered("▶ 방어 자세를 취합니다. 피해가 절반으로 감소합니다.");
+            }
+            else {
+                printCentered("▶ 잘못된 입력입니다. 다시 선택해주세요.");
+                continue;
+            }
+
+            printCentered("\n▶ 용의 반격!");
+            int damage_to_char = dragon_attack_power - defense + (rand() % 10);
+
+            if (action == 2) { // 방어 시 피해 절반
+                damage_to_char /= 2;
+            }
+
+            if (damage_to_char < 0) damage_to_char = 0;
+            hp -= damage_to_char;
+
+            printCentered("▶ 받은 피해: " + to_string(damage_to_char));
+            printCentered("▶ 남은 체력: " + to_string(hp) + " / " + to_string(max_hp));
+
+            if (hp <= 0) {
+                printCentered("\n▶ 용에게 패배했습니다. 마을이 멸망했습니다.");
+                printCentered("▶ 엔딩: '마을의 멸망'");
+                exit(0);
+            }
+        }
+    }
+
 
 
     void item_up()
@@ -405,7 +493,7 @@ public:
                             {
                                 printCentered(" 아이템을 사용하지 않았습니다. 피해를 2배로 입습니다!");
                             }
-                            damage_to_char *= 3; // 피해 3배 적용
+                            damage_to_char *= 2; // 피해 3배 적용
                         }
                     }
 
@@ -482,18 +570,23 @@ public:
 
                 system("cls");
 
-                // 경험치 로직 추가
+                // 경험치 로직
                 int exp_gain = 0;
-                if (!isStrongMonster)
-                {
+                if (!isStrongMonster) {
                     exp_gain = rand() % 2 == 0 ? 20 + rand() % 11 : 40 + rand() % 51;
                 }
-                else
-                {
+                else {
                     exp_gain = rand() % 2 == 0 ? 100 + rand() % 51 : 170 + rand() % 31;
                 }
                 printCentered("▶ " + to_string(exp_gain) + " 경험치를 획득했습니다!");
                 experience += exp_gain;
+
+                int initial_level = level; // 레벨업 이전 레벨 저장
+                level_up();
+
+                if (level > initial_level) {
+                    printCentered("▶ 레벨이 " + to_string(level - initial_level) + "만큼 상승하여 현재 레벨: " + to_string(level) + "입니다!");
+                }
 
                 // 강력한 몬스터 처치 시 5% 확률로 아무 보상도 받지 않음
                 if (isStrongMonster && rand() % 100 < 5)

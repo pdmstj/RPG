@@ -220,7 +220,7 @@ class Character //모험가의 상태와 동작 관리
     int level = 1;
     int experience = 0;
     int experience_needed = 50;
-    int item_num = 3;
+    int item_num = 5;
     int hp = 100;
     int max_hp = 100;
     int hp_item = 5;
@@ -270,33 +270,34 @@ public:
             }
         }
 
-        if (levels_gained > 0) {
-            printCentered("▶ 레벨이 " + to_string(levels_gained) + " 만큼 상승하여 현재 레벨: " + to_string(level) + " 입니다.");
-        }
 
         if (level == MAX_LEVEL) {
             printCentered("▶ 축하합니다! 최대 레벨인 " + to_string(MAX_LEVEL) + "에 도달했습니다.");
             printCentered(" 괴물들의 보스와 싸울 준비가 되었습니다!");
+            Sleep(500);
+            waitForEnter();
             boss_fight();
         }
     }
 
     void boss_fight() {
-        printCentered("\n▶ '용'과 싸우시겠습니까? (1: 싸운다, 2: 싸우지 않는다)");
+        boss_intro();
+        printCentered("\n▶ '보스'와 싸우시겠습니까? (1: 싸운다, 2: 싸우지 않는다)");
         int choice;
         cin >> choice;
 
         if (choice == 1) {
             system("cls");
-            printCentered("▶ '용'과의 최종 결전이 시작됩니다!");
+            printCentered(" '보스'과의 최종 결전이 시작됩니다!");
             final_boss_battle();
         }
         else if (choice == 2) {
             system("cls");
-            printCentered("▶ 용과 싸우기를 거부했습니다.");
-            printCentered("▶ 당신은 평생 용사를 양성하며 괴물들과의 싸움을 이어갑니다.");
-            printCentered("▶ 평생 지속된 싸움은 당신의 이름을 전설로 남겼습니다.");
-            printCentered("▶ 엔딩: '전설의 용사, 끝없는 싸움'");
+            printCentered(" 용과 싸우기를 거부했습니다.");
+            printCentered(" 당신은 평생 용사를 양성하며 괴물들과의 싸움을 이어갑니다.");
+            printCentered(" 평생 지속된 싸움은 당신의 이름을 전설로 남겼습니다.");
+            printCentered(" ");
+            printCentered(" 엔딩: '전설의 용사, 끝없는 싸움'");
             exit(0);
         }
         else {
@@ -306,12 +307,12 @@ public:
     }
 
     void final_boss_battle() {
-        int dragon_hp = 500; // 보스 체력
+        int dragon_hp = 1000; // 보스 체력
         int dragon_attack_power = 50; // 보스 공격력
         bool is_defeated = false;
 
         while (true) {
-            printCentered("\n▶ 무엇을 하시겠습니까? (1: 공격, 2: 방어)");
+            printCentered("\n 무엇을 하시겠습니까? (1: 공격, 2: 방어)");
             int action;
             cin >> action;
 
@@ -325,7 +326,8 @@ public:
 
                 if (dragon_hp == 0) {
                     printCentered("\n▶ 용을 처치했습니다! 마을을 구했습니다!");
-                    printCentered("▶ 엔딩: '위대한 용사'");
+                    printCentered(" ");
+                    printCentered(" 엔딩: '위대한 용사'");
                     exit(0);
                 }
             }
@@ -338,7 +340,36 @@ public:
             }
 
             printCentered("\n▶ 용의 반격!");
-            int damage_to_char = dragon_attack_power - defense + (rand() % 10);
+            int damage_to_char;
+
+            // 용이 10% 확률로 특수 공격 사용
+            if (rand() % 10 == 0) {
+                printCentered(" ");
+                printCentered(" ******* 주의 ******** ");
+                printCentered(" ▶ 용이 '특수 공격'을 시전합니다!");
+                printCentered(" ▶ 시야확장 아이템을 사용하시겠습니까? (1: 사용, 2: 사용하지 않음)");
+
+                int use_item;
+                cin >> use_item;
+
+                if (use_item == 1 && item_num > 0) { // 아이템 사용 및 소지 확인
+                    item_down();
+                    printCentered("▶ 시야확장 아이템을 사용하여 피해를 막았습니다!");
+                    damage_to_char = dragon_attack_power - defense + (rand() % 10); // 기본 피해
+                }
+                else {
+                    if (use_item == 1 && item_num == 0) { // 아이템 사용 시도했으나 없는 경우
+                        printCentered("▶ 시야확장 아이템이 없습니다! 피해를 2배로 입습니다.");
+                    }
+                    else if (use_item == 2) { // 아이템 사용하지 않음
+                        printCentered("▶ 아이템을 사용하지 않았습니다. 피해를 2배로 입습니다.");
+                    }
+                    damage_to_char = (dragon_attack_power - defense + (rand() % 10)) * 2; // 2배 피해
+                }
+            }
+            else {
+                damage_to_char = dragon_attack_power - defense + (rand() % 10); // 일반 공격 피해
+            }
 
             if (action == 2) { // 방어 시 피해 절반
                 damage_to_char /= 2;
@@ -350,12 +381,66 @@ public:
             printCentered("▶ 받은 피해: " + to_string(damage_to_char));
             printCentered("▶ 남은 체력: " + to_string(hp) + " / " + to_string(max_hp));
 
+            // 체력이 20% 미만일 경우 가능한 모든 물약 사용
+            while (hp <= (0.2 * max_hp) && hp_item > 0) {
+                printCentered("▶ 체력이 위험 수준입니다! 자동으로 물약을 사용합니다.");
+                hp_up(); // 물약 사용하여 체력 회복
+            }
+
+            if (hp <= (0.2 * max_hp) && hp_item == 0) {
+                printCentered("▶ 체력이 위험합니다! 하지만 물약이 없습니다. 주의하세요!");
+            }
+
             if (hp <= 0) {
                 printCentered("\n▶ 용에게 패배했습니다. 마을이 멸망했습니다.");
                 printCentered("▶ 엔딩: '마을의 멸망'");
                 exit(0);
             }
         }
+    }
+
+
+    void boss_intro() {
+        system("cls");
+        printCenteredSlowly(" 괴물들의 보스 '용'이 등장합니다!");
+        Sleep(500);
+        printCentered("                                                     ...                                        ");
+        printCentered("                                               .  ,-~*!:                                    .   ");
+        printCentered("                                                ,~:;*-.                                        ");
+        printCentered("                                               -;::*-                                          ");
+        printCentered("                                             .-;::*;.                                          ");
+        printCentered("                                           .,~:::**!~~.                                        ");
+        printCentered("                                    ;      !-:::;!:;;;:;.                                      ");
+        printCentered("                                   :      *~!:=!::!*::::*.                                     ");
+        printCentered("                                  ,$ .  .!;!;::::::::*;:::-                                    ");
+        printCentered("                                  :! :,-;!~!!:::::::::;::::,                                   ");
+        printCentered("                                 ,!~,!:;*!**;::::::::::!**;*           ,.                      ");
+        printCentered("                                 -*:**;!*!*:::::::::::::=$*!~         ,*.  .,.                 ");
+        printCentered("                                 :!*!!;*;*;::::::::::::::=:~=       .~:=,-~;!;---              ");
+        printCentered("                                .!!:;:!;!!::*;::;!;::::::**-,.     .;:*=:!*=*!!;::!,         .~.");
+        printCentered("                                 ;;:::::*!=*!:=,   -;:::::*:      ~:::::!=:-,-==*;::!*-         ");
+        printCentered("                               ,-*!::::::!*;;, ,   . ;::::=*     ~;:;;:!!;;*;:,-;!;*=*!!=*!;;;!!!.");
+        printCentered("                             .~!=$!:::::*$*!:. :   , .!:::**:   :;:!*;!!!;**!;!~-,,~:::~~~;;~~,   ");
+        printCentered("                       ,    ~!:!=!:::::::*$*~  . ,*   ::::*!$  ;;:!*~-,=;:~-**;;;--,,,,,,;..      ");
+        printCentered("              =,.     -~ .-*;::::;;=::;**!        .~. .:::!;= ~::*;~~-,,*!:~,!!!:*~~~~--;        ");
+        printCentered("               ;:--   ,::!;;!!;*=**!:!=*~          ,~ ,;::::=.:;*;~~~~-,,,;;!~-,,-~~~:*$$:.      ");
+        printCentered("                  .!;:;;$$===$$~*=::=:             .  .::::;*!;=~~~~~~,,,,*;;~~,,,,,,,!.         ");
+        printCentered("                 ,*;!*=*=;*****;*!;==;;!*;,,,     .~  ;:;*!!*=!:~~~~~~,,,,*;;~~~,,-!             ");
+        printCentered("                -*!~,-!$*:*~-;;*#:!*;;!**!;!;-~   ~-. !:;:::;!=;~~~~~~,,,,-==;:~,,-~             ");
+        printCentered("               -!;-,-!;;~;=~,;!==:*-~~~::~;==*!:~*.. .::::::::!*!~~~~~,,,,,:!:~~~,,:             ");
+        printCentered("              -!:,,-~=;:-*=~,;!*;;*,,,-~~~~~~~*=!.   ~:::::::::!*!~~~~,,,,,-**~~~~;              ");
+        printCentered("            ,:!:,,,-~=!:~~=~~$=!:**;,,,,-~~~~~~:;:    -::;::::::!*!:~~-,,,,,:;!~~:.              ");
+        printCentered("           .!!~,,,,~~=!-~~!::*==!=*;,,,,-~~:::;!,    .;:::::$=**!:**!,,,,,,,-~*!.                ");
+        printCentered("          !;;,,,,,~~~=;,-~;$-##$*!**!,,,,-~~:::;, ,~, *:::;!:::::::**!-,,,,,,,=;*,               ");
+        printCentered("      .,:*=-,,,,,-~~~*!,,~~!;.-!*!~**;,,,,-::::;      -:::::=$=**!:**!,,,,,,,-~*!.               ");
+        printCentered("     .-~:~~,--,,,~~~~*!,,~~~*:,,~~~~!*;,,,,;::!;.     .:::::;*;~~;:**~,,,-~.,-~~:.               ");
+        printCentered("            ..;,-~~~~!~,,-~~~*~,,~~~~!*!.,!::!*!.      :;::::**:~*;*=-,,:..                      ");
+        printCentered("               -:~~~~=.,,,~~~:!-,:!;!!**;;::!**;-       :::::*=:~!!*~,;                         ");
+        printCentered("                                                                                                 ");
+        Sleep(2000);
+        printCenteredSlowly("용의 포효가 들립니다! 결전을 준비하세요...");
+        waitForEnter();
+        system("cls");
     }
 
 
@@ -986,7 +1071,7 @@ int main()
             if (destination == 5) {
                 continue;
             }
-            else if (motion_in == 6)
+            else if (motion_in == 4)
             {
                 string location;
                 // 여정 선택 로직...
